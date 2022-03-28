@@ -16,15 +16,21 @@ let proto = grpc.loadPackageDefinition(
 );
 
 let users = [];
+
 let numplayers = 0;
 //Receive message from client joining
 function join(call, callback) {
   if (users.length >= 2) {
-    call.write({ user: "Server", text: `Sala cheia`, hour: new Date().getHours() + ":" + new Date().getMinutes() })
+    call.write({ user: "Server", text: `Sala cheia`})
     return;
   }
-  users.push(call);
-  notifyChat({ user: "Server", text: `new user joined...`, hour: new Date().getHours() + ":" + new Date().getMinutes() });
+  let user = {
+    nome: call.request.user,
+    palavra: call.request.text
+  };
+  users.push(user);
+  console.log(user);
+  user.call.write({ user: "Server", text: `New user joined... total ${users.length}`})
 }
 
 //Receive message from client
@@ -36,7 +42,7 @@ function send(call, callback) {
 //Send message to all connected clients
 function notifyChat(message) {
   users.forEach(user => {
-    user.write(message);
+    user.call.write(message);
   });
 }
 
