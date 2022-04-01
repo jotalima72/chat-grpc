@@ -31,15 +31,24 @@ let client = new proto.Chat(
 
 //Start the stream between server and client
 function startChat() {
+  let channel
   rl.question("Qual palavra você quer que o outro jogador adivinhe?", answer => {
     palavra = answer;
+    console.log("palavra", palavra)
+    channel = client.join({ user: username, palavra: palavra });
+    channel.on("data", onData);
   });
-  let channel = client.join({ user: username, palavra: palavra });
-  
-  channel.on("data", onData);
+
+
+
 
   rl.on("line", function (text) {
-    client.send({ user: username, text: text }, res => { });
+    if (text === 'exit') {
+      client.exit({ user: username });
+    }
+    else {
+      client.send({ user: username, palavra: text }, res => { });
+    }
   });
 }
 
@@ -48,12 +57,17 @@ function onData(message) {
   if (message.user == username) {
     return;
   }
-  if (message.user == "Server" && message.text == "Sala cheia") {
-    console.log(`||${message.user}|| ${message.text} `);
+  if (message.user == "Server" && message.palavra == "Sala cheia") {
+    console.log(`||${message.user}|| ${message.palavra} `);
     client = {};
     exit(0);
   }
-  console.log(` ||${message.user}|| ${message.text} `);
+  if (message.user == "Server" && message.palavra.includes("O jogador") ) {
+    console.log(`||${message.user}|| ${message.palavra} `);
+    client = {};
+    exit(0);
+  }
+  console.log(` ||${message.user}|| ${message.palavra} `);
 }
 
 //Ask user name than start the chat
