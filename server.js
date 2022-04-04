@@ -6,7 +6,7 @@ const SERVER_ADDRESS = "0.0.0.0:5001";
 
 //Load protobuf
 let proto = grpc.loadPackageDefinition(
-  protoLoader.loadSync("protos/chat.proto", {
+  protoLoader.loadSync("protos/jogo.proto", {
     keepCase: true,
     longs: String,
     enums: String,
@@ -17,7 +17,6 @@ let proto = grpc.loadPackageDefinition(
 
 let users = [];
 let rodada = 0;
-let vitoria = false;
 //Receive message from client joining
 function join(call, callback) {
   if (users.length >= 2) {
@@ -109,7 +108,6 @@ function rodarRodada(message) {
     if (!users[index].tentativas.includes(message.palavra)) {
       users[index].tentativas.push(message.palavra);
       acertos = getAllIndexes(users[index].alvo, message.palavra);
-      console.log("acertos", acertos);
       if (acertos.length === 0) {
         users[index].call.write({ user: "Server", palavra: `ERROUUUUU\n ${imprimePalavra(users[index].alvo, users[index].acertos)}` });
       }
@@ -149,7 +147,7 @@ function exitClient(call, callback) {
 }
 
 //Define server with the methods and start it
-server.addService(proto.Chat.service, { join: join, send: send, exit: exitClient });
+server.addService(proto.Jogo.service, { join: join, send: send, exit: exitClient });
 
 server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
 

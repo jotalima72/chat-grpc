@@ -1,6 +1,6 @@
 syntax = "proto3"; //Specify proto3 version.
 
-service Chat {
+service Jogo {
     rpc join(Message) returns (stream Message){}
     rpc send(Message) returns (Message){}
     rpc exit(Message) returns (Message){}

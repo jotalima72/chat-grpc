@@ -10,7 +10,7 @@ var rl = readline.createInterface({
 });
 
 var proto = grpc.loadPackageDefinition(
-  protoLoader.loadSync("protos/chat.proto", {
+  protoLoader.loadSync("protos/jogo.proto", {
     keepCase: true,
     longs: String,
     enums: String,
@@ -24,7 +24,7 @@ const REMOTE_SERVER = "0.0.0.0:5001";//"192.168.43.229:5001";
 let username;
 let palavra;
 //Create gRPC client
-let client = new proto.Chat(
+let client = new proto.Jogo(
   REMOTE_SERVER,
   grpc.credentials.createInsecure()
 );
