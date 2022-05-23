@@ -1,8 +1,16 @@
 let grpc = require("grpc");
+let redis = require("redis");
 var protoLoader = require("@grpc/proto-loader");
 
 const server = new grpc.Server();
-const SERVER_ADDRESS = "0.0.0.0:5001";
+const SERVER_ADDRESS = "0.0.0.0:3000";
+
+const client = redis.createClient({
+  host: 'redis-server',
+  port: 6379
+});
+
+
 
 //Load protobuf
 let proto = grpc.loadPackageDefinition(
@@ -15,8 +23,10 @@ let proto = grpc.loadPackageDefinition(
   })
 );
 
+
 let users = [];
 let rodada = 0;
+client.set('rodada', rodada);
 //Receive message from client joining
 function join(call, callback) {
   if (users.length >= 2) {
@@ -55,21 +65,28 @@ function send(call, callback) {
 
 }
 
-function startGame() {
+async function startGame() {
   notifyChat({ user: "Server", palavra: "Começou o nosso jogo" });
   users.forEach(user => {
     user.call.write({ user: 'Server', palavra: `Sua palavra tem ${user.alvo.length} letras\n ${imprimePalavra(user.alvo, user.acertos)}` })
   });
+  let r = await client.get('rodada');
+  console.log('RODADADADADA', r);
+  r++;
+  await client.set('rodada', r);
   rodada++;
 }
 
 
-function fimDeRodada() {
+async function fimDeRodada() {
   let fimRodada = users.filter(user => user.rodada === true).length;
   if (fimRodada === 2) {
     users.forEach(user => user.rodada = false);
     rodada++;
-    notifyChat({ user: "Server", palavra: `Os dois jogaram. vamos novamente!\t rodada: ${rodada}` })
+    let r = client.get('rodada');
+    r++;
+    await client.set('rodada', r);
+    notifyChat({ user: "Server", palavra: `Os dois jogaram. vamos novamente!\t rodada: ${await client.get('rodada')}` })
   }
 }
 
@@ -113,16 +130,15 @@ function rodarRodada(message) {
       }
       else {
         users[index].acertos = users[index].acertos.concat(acertos);
-        console.log(users[index].acertos);
         users[index].call.write({ user: "Server", palavra: `voce acertou ${acertos.length} letras!\t total: ${users[index].acertos.length}/ ${users[index].alvo.length}\n ${imprimePalavra(users[index].alvo, users[index].acertos)}` });
-        
+
         if (temosVitoria(users[index])) {
           notifyChat({ user: "Server", palavra: `O jogador ${users[index].nome} foi o grande vitorioso! GG easy!\n ${imprimePalavra(users[index].alvo, users[index].acertos)}` });
         }
       }
     }
     else {
-      users[index].call.write({ user: "Server", palavra: `letra já utilizada, se fudeu!\n ${imprimePalavra(users[index].alvo, users[index].acertos)}` });
+      users[index].call.write({ user: "Server", palavra: `letra já utilizada, seja mais esperto na próxima\n ${imprimePalavra(users[index].alvo, users[index].acertos)}` });
     }
     users[index].rodada = true;
     notifyChat({ user: users[index].nome, palavra: `terminei minha rodada e acertei ${acertos.length} letras` });

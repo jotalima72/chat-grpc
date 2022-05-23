@@ -9,5 +9,4 @@ service Jogo {
 message Message {
     string user = 1;
     string palavra = 2;
-    
 }

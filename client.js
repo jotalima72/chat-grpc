@@ -19,7 +19,7 @@ var proto = grpc.loadPackageDefinition(
   })
 );
 
-const REMOTE_SERVER = "0.0.0.0:5001";//"192.168.43.229:5001";
+const REMOTE_SERVER = "0.0.0.0:3000";//"192.168.43.229:5001";
 
 let username;
 let palavra;
