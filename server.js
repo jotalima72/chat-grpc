@@ -1,16 +1,14 @@
 let grpc = require("grpc");
-let redis = require("redis");
+let Redis = require("ioredis");
 var protoLoader = require("@grpc/proto-loader");
 
 const server = new grpc.Server();
 const SERVER_ADDRESS = "0.0.0.0:3000";
 
-const client = redis.createClient({
-  host: 'redis-server',
+const redis = new Redis({
+  host: "redis-server",
   port: 6379
 });
-
-
 
 //Load protobuf
 let proto = grpc.loadPackageDefinition(
@@ -25,8 +23,8 @@ let proto = grpc.loadPackageDefinition(
 
 
 let users = [];
-let rodada = 0;
-client.set('rodada', rodada);
+let rodada = 1;
+redis.set('rodada', rodada);
 //Receive message from client joining
 function join(call, callback) {
   if (users.length >= 2) {
@@ -62,19 +60,15 @@ function send(call, callback) {
   let index = users.findIndex((user) => { return user.nome == call.request.user });
   users[index].call.write({ user: "Server", palavra: "Envie apenas uma letra por rodada" });
 
-
 }
 
 async function startGame() {
+  
   notifyChat({ user: "Server", palavra: "Começou o nosso jogo" });
+  let r = await redis.get('rodada');
   users.forEach(user => {
-    user.call.write({ user: 'Server', palavra: `Sua palavra tem ${user.alvo.length} letras\n ${imprimePalavra(user.alvo, user.acertos)}` })
+    user.call.write({ user: 'Server', palavra: `Sua palavra tem ${user.alvo.length} letras \t rodada: ${r}\n ${imprimePalavra(user.alvo, user.acertos)}` })
   });
-  let r = await client.get('rodada');
-  console.log('RODADADADADA', r);
-  r++;
-  await client.set('rodada', r);
-  rodada++;
 }
 
 
@@ -82,11 +76,9 @@ async function fimDeRodada() {
   let fimRodada = users.filter(user => user.rodada === true).length;
   if (fimRodada === 2) {
     users.forEach(user => user.rodada = false);
-    rodada++;
-    let r = client.get('rodada');
-    r++;
-    await client.set('rodada', r);
-    notifyChat({ user: "Server", palavra: `Os dois jogaram. vamos novamente!\t rodada: ${await client.get('rodada')}` })
+    await redis.incrby('rodada', 1);
+    r = await redis.get('rodada');
+    notifyChat({ user: "Server", palavra: `Os dois jogaram. vamos novamente!\t rodada: ${r}` })
   }
 }
 
